@@ -151,22 +151,6 @@
     "-----------------"
     ["Customize lean4-mode" (customize-group 'lean)            t]))
 
-(defconst lean4-hooks-alist
-  '(
-    ;; Handle events that may start automatic syntax checks
-    (before-save-hook                    . lean4-whitespace-cleanup)
-    ;; info view
-    ;; update errors immediately, but delay querying goal
-    (flycheck-after-syntax-check-hook    . lean4-info-buffer-redisplay-debounced)
-    (post-command-hook                   . lean4-info-buffer-redisplay-debounced)
-    (lsp-on-idle-hook                    . lean4-info-buffer-refresh)
-    )
-  "Hooks which lean4-mode needs to hook in.
-
-The `car' of each pair is a hook variable, the `cdr' a function
-to be added or removed from the hook variable if Flycheck mode is
-enabled and disabled respectively.")
-
 (defun lean4-mode-setup ()
   "Default lean4-mode setup"
   ;; Right click menu sources
@@ -212,8 +196,7 @@ Invokes `lean4-mode-hook'.
   (if (fboundp 'electric-indent-local-mode)
       (electric-indent-local-mode -1))
   ;; (abbrev-mode 1)
-  (pcase-dolist (`(,hook . ,fn) lean4-hooks-alist)
-    (add-hook hook fn nil 'local))
+  (add-hook 'before-save-hook #'lean4-whitespace-cleanup nil t)
   (lean4-mode-setup))
 
 (defun lean--version ()
@@ -275,7 +258,18 @@ Invokes `lean4-mode-hook'.
   (add-to-list 'lsp-language-id-configuration
                '(lean4-mode . "lean"))
 
-  (add-hook 'lean4-mode-hook #'lsp))
+  (add-hook 'lean4-mode-hook #'lsp)
+  (add-hook 'lean4-mode-hook #'lean4-lsp-local-setup))
+
+(defun lean4-lsp-local-setup ()
+  (add-hook 'flycheck-after-syntax-check-hook
+            #'lean4-info-buffer-redisplay-debounced nil 'local)
+  ;; info view
+  ;; update errors immediately, but delay querying goal
+  (add-hook 'post-command-hook
+            #'lean4-info-buffer-redisplay-debounced nil 'local)
+  (add-hook 'lsp-on-idle-hook
+            #'lean4-info-buffer-refresh nil 'local))
 
 (provide 'lean4-mode)
 ;;; lean4-mode.el ends here

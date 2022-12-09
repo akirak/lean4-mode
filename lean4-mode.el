@@ -10,7 +10,7 @@
 ;; Maintainer: Sebastian Ullrich <sebasti@nullri.ch>
 ;; Created: Jan 09, 2014
 ;; Keywords: languages
-;; Package-Requires: ((emacs "26.3") (dash "2.18.0") (s "1.10.0") (f "0.19.0") (flycheck "30") (magit-section "2.90.1") (lsp-mode "8.0.0"))
+;; Package-Requires: ((emacs "26.3") (dash "2.18.0") (s "1.10.0") (f "0.19.0") (flycheck "30") (magit-section "2.90.1"))
 ;; URL: https://github.com/leanprover/lean4
 
 ;; Released under Apache 2.0 license as described in the file LICENSE.
@@ -31,16 +31,13 @@
 (require 'dash)
 (require 'pcase)
 (require 'flycheck)
-(require 'lsp-mode)
 (require 'lean4-eri)
 (require 'lean4-util)
 (require 'lean4-settings)
 (require 'lean4-input)
 (require 'lean4-syntax)
-(require 'lean4-info)
 (require 'lean4-leanpkg)
 (require 'lean4-dev)
-(require 'lean4-fringe)
 (require 'lean4-lake)
 
 (defun lean4-compile-string (lake-name exe-name args file-name)
@@ -256,11 +253,6 @@ Invokes `lean4-mode-hook'.
 ;;;### autoload
 (modify-coding-system-alist 'file "\\.lean\\'" 'utf-8)
 
-;; LSP init
-;; Ref: https://emacs-lsp.github.io/lsp-mode/page/adding-new-language/
-(add-to-list 'lsp-language-id-configuration
-             '(lean4-mode . "lean"))
-
 (defun lean4--server-cmd ()
   (condition-case nil
       (if (string-version-lessp (car (process-lines (lean4-get-executable "lake") "--version")) "3.1.0")
@@ -268,13 +260,23 @@ Invokes `lean4-mode-hook'.
         `(,(lean4-get-executable "lake") "serve"))
     (error `(,(lean4-get-executable lean4-executable-name) "--server"))))
 
-(lsp-register-client
- (make-lsp-client :new-connection (lsp-stdio-connection #'lean4--server-cmd)
-                  :major-modes '(lean4-mode)
-                  :server-id 'lean4-lsp
-                  :notification-handlers (ht ("$/lean/fileProgress" #'lean4-fringe-update))))
+(defun lean4-lsp-setup ()
+  (require 'lsp-mode)
+  (require 'lean4-info)
+  (require 'lean4-fringe)
 
-(add-hook 'lean4-mode-hook #'lsp)
+  (lsp-register-client
+   (make-lsp-client :new-connection (lsp-stdio-connection #'lean4--server-cmd)
+                    :major-modes '(lean4-mode)
+                    :server-id 'lean4-lsp
+                    :notification-handlers (ht ("$/lean/fileProgress" #'lean4-fringe-update))))
+
+  ;; LSP init
+  ;; Ref: https://emacs-lsp.github.io/lsp-mode/page/adding-new-language/
+  (add-to-list 'lsp-language-id-configuration
+               '(lean4-mode . "lean"))
+
+  (add-hook 'lean4-mode-hook #'lsp))
 
 (provide 'lean4-mode)
 ;;; lean4-mode.el ends here

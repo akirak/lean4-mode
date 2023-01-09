@@ -43,6 +43,10 @@
 (require 'lean4-fringe)
 (require 'lean4-lake)
 
+;; Silence byte-compiler
+(defvar lsp--cur-version)
+(defvar markdown-code-lang-modes)
+
 (defun lean4-compile-string (lake-name exe-name args file-name)
   "Concatenate EXE-NAME, ARGS, and FILE-NAME."
   (if lake-name

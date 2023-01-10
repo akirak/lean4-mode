@@ -46,6 +46,7 @@
 ;; Silence byte-compiler
 (defvar lsp--cur-version)
 (defvar markdown-code-lang-modes)
+(defvar compilation-mode-font-lock-keywords)
 
 (defun lean4-compile-string (lake-name exe-name args file-name)
   "Concatenate EXE-NAME, ARGS, and FILE-NAME."
